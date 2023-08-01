@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>my-draggable</title>
+    <style>
+        .container {
+            width: 400px;
+            margin: 0 auto;
+            background: pink;
+            padding: 20px;
+        }
+        .list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .list-item {
+            width: 100px;
+            height: 100px;
+            border: 1px solid #000;
+            background: #fff;
+            line-height: 100px;
+            text-align: center;
+            list-style: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .list-item.active {
+            background-color: skyblue;
+        }
+
+        .clone-item {
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 1;
+            width: 100px;
+            height: 100px;
+            border: 1px solid #000;
+            background: #fff;
+            line-height: 100px;
+            text-align: center;
+            list-style: none;
+            -webkit-user-select: none;
+            user-select: none;
+            pointer-events: none;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <ul class="list">
+            <li class="list-item">111</li>
+            <li class="list-item">222</li>
+            <li class="list-item">333</li>
+            <li class="list-item">444</li>
+            <li class="list-item">555</li>
+            <li class="list-item">666</li>
+            <li class="list-item">777</li>
+            <li class="list-item">888</li>
+            <li class="list-item">999</li>
+        </ul>
+    </div>
+
+    <script>
+        class Draggable {
+            containerElement = null
+            drag = { element: null, index: 0, firstIndex: 0 }
+            clone = { element: null, x: 0, y: 0 }
+            rectList = []
+
+            constructor(options) {
+                this.containerElement = options.element
+                this.init()
+            }
+
+            onPointerDown(e) {
+                console.log(e)
+                // 指针落下的时候记录落下的元素
+                this.drag.element = e.target
+                // 添加背景色
+                this.drag.element.classList.add('active')
+
+                // clone该元素
+                this.clone.element = this.drag.element.cloneNode(true)
+                // 赋予该元素样式
+                this.clone.element.className = 'clone-item'
+
+                // 在页面上添加该元素
+                document.body.appendChild(this.clone.element)
+
+
+                const index = [].indexOf.call(this.containerElement.children, this.drag.element)
+                this.drag.index = index
+                this.drag.firstIndex = index
+
+                // 复制出来的元素初始位置为落点元素的位置
+                this.clone.x = this.rectList[index].x
+                this.clone.y = this.rectList[index].y
+
+                this.clone.element.style.transition = 'none';
+                this.clone.element.className = 'clone-item';
+                this.clone.element.style.transform = 'translate3d(' + this.clone.x + 'px, ' + this.clone.y + 'px, 0)';
+            }
+
+            onPointerMove(e) {
+
+            }
+
+            onPointerUp(e) {
+
+            }
+
+            init() {
+                this.bindEvent()
+                this.getRectList()
+            }
+
+            bindEvent() {
+                this.containerElement.addEventListener('pointerdown', this.onPointerDown.bind(this))
+                this.containerElement.addEventListener('pointermove', this.onPointerMove.bind(this))
+                this.containerElement.addEventListener('pointerup', this.onPointerUp.bind(this))
+            }
+
+            getRectList() {
+                this.rectList = []
+                for (const item of this.containerElement.children) {
+                    // getBoundingClientRect获取的是相对于viewport的数据
+                    // x/left  y/top width height right:x + width bottom：y + height
+                    this.rectList.push(item.getBoundingClientRect())
+                }
+                console.log(this.rectList)
+            }
+        }
+        new Draggable({
+            element: document.querySelector('.list')
+        })
+    </script>
+</body>
+</html>
