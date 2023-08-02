@@ -69,6 +69,9 @@
 
     <script>
         class Draggable {
+            isPointerDown = false // 指针是否有移动
+            diff = { x: 0, y: 0 } // 移动的偏差值
+            lastPointerMove = { x: 0, y: 0 } // 指针最后移动到的位置，使用的是clientX、ClientY(即相对于可视区域)
             containerElement = null
             drag = { element: null, index: 0, firstIndex: 0 }
             clone = { element: null, x: 0, y: 0 }
@@ -80,7 +83,10 @@
             }
 
             onPointerDown(e) {
-                console.log(e)
+                this.isPointerDown = true
+                this.lastPointerMove.x = e.clientX
+                this.lastPointerMove.y = e.clientY
+
                 // 指针落下的时候记录落下的元素
                 this.drag.element = e.target
                 // 添加背景色
@@ -109,11 +115,32 @@
             }
 
             onPointerMove(e) {
+                if (!this.isPointerDown) return
+                this.diff.x = e.clientX - this.lastPointerMove.x
+                this.diff.y = e.clientY - this.lastPointerMove.y
 
+                // 更新最后移动到的位置
+                this.lastPointerMove.x = e.clientX
+                this.lastPointerMove.y = e.clientY
+
+                this.clone.x += this.diff.x
+                this.clone.y += this.diff.y
+
+                this.clone.element.style.transform = 'translate3d(' + this.clone.x + 'px, ' + this.clone.y + 'px, 0)';
+
+                // 监测碰撞到了哪个元素，指针是否在某个元素内
+                for (let i = 0; i < this.rectList.length; i++) {
+                    if (i !== this.drag.index &&
+                        e.clientX > this.rectList[i].left && e.clientX < this.rectList[i].right &&
+                        e.clientY > this.rectList[i].top && e.clientY < this.rectList[i].bottom) {
+                        // 碰到了第 i 个元素
+                        this.drag.index = i;
+                    }
+                }
             }
 
             onPointerUp(e) {
-
+                this.isPointerDown = false
             }
 
             init() {
