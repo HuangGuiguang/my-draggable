@@ -75,7 +75,8 @@
             containerElement = null
             drag = { element: null, index: 0, firstIndex: 0 }
             clone = { element: null, x: 0, y: 0 }
-            rectList = []
+            rectList = [] // 各位置的位置
+            referenceElement = null
 
             constructor(options) {
                 this.containerElement = options.element
@@ -112,6 +113,11 @@
                 this.clone.element.style.transition = 'none';
                 this.clone.element.className = 'clone-item';
                 this.clone.element.style.transform = 'translate3d(' + this.clone.x + 'px, ' + this.clone.y + 'px, 0)';
+
+                // 为各元素添加动画
+                for (const item of this.containerElement.children) {
+                    item.style.transition = 'transform 500ms';
+                }
             }
 
             onPointerMove(e) {
@@ -126,21 +132,89 @@
                 this.clone.x += this.diff.x
                 this.clone.y += this.diff.y
 
-                this.clone.element.style.transform = 'translate3d(' + this.clone.x + 'px, ' + this.clone.y + 'px, 0)';
+                this.clone.element.style.transform = 'translate3d(' + this.clone.x + 'px, ' + this.clone.y + 'px, 0)'
 
                 // 监测碰撞到了哪个元素，指针是否在某个元素内
                 for (let i = 0; i < this.rectList.length; i++) {
-                    if (i !== this.drag.index &&
-                        e.clientX > this.rectList[i].left && e.clientX < this.rectList[i].right &&
+                    if (i !== this.drag.index && e.clientX > this.rectList[i].left && e.clientX < this.rectList[i].right &&
                         e.clientY > this.rectList[i].top && e.clientY < this.rectList[i].bottom) {
-                        // 碰到了第 i 个元素
-                        this.drag.index = i;
+                        // if (this.drag.index < i) {
+                        //     for (let j = this.drag.index; j < i; j++) {
+                        //         if (j < this.drag.firstIndex) {
+                        //             this.containerElement.children[j].style.transform = 'translate3d(0px, 0px, 0)'
+                        //         } else {
+                        //             const x = this.rectList[j].left - this.rectList[j + 1].left
+                        //             const y = this.rectList[j].top - this.rectList[j + 1].top
+                        //             this.containerElement.children[j + 1].style.transform = 'translate3d(' + x + 'px, ' + y + 'px, 0)'
+                        //         }
+                        //     }
+                        //     this.referenceElement = this.containerElement.children[i + 1];
+                        // } else if (this.drag.index > i) {
+                        //     for (let j = i; j < this.drag.index; j++) {
+                        //         if (this.drag.firstIndex <= j) { // j > this.drag.firstIndex this.drag.firstIndex <= j
+                        //             this.containerElement.children[j + 1].style.transform = 'translate3d(0px, 0px, 0)'
+                        //         } else { // j <= this.drag.firstIndex   this.drag.firstIndex > j
+                        //             const x = this.rectList[j + 1].left - this.rectList[j].left
+                        //             const y = this.rectList[j + 1].top - this.rectList[j].top
+                        //             this.containerElement.children[j].style.transform = 'translate3d(' + x + 'px, ' + y + 'px, 0)'
+                        //         }
+                        //     }
+                        //     this.referenceElement = this.containerElement.children[i]
+                        // }
+                        if (i > this.drag.firstIndex) {
+                            // 分为三段处理, 1: 从初始位置 + 1的部分~移动到的位置的元素; 2: 0~初始位置的元素 3: 移动到的位置的元素~最后的位置
+                            for (let j = this.drag.firstIndex + 1; j <= i; j++) {
+                                const x = this.rectList[j - 1].left - this.rectList[j].left
+                                const y = this.rectList[j - 1].top - this.rectList[j].top
+                                this.containerElement.children[j].style.transform = 'translate3d(' + x + 'px, ' + y + 'px, 0)'
+                            }
+                            for (let k = 0; k < this.drag.firstIndex; k++) {
+                                this.containerElement.children[k].style.transform = 'translate3d(0px, 0px, 0)'
+                            }
+                            for (let l = i + 1; l < this.rectList.length; l++) {
+                                this.containerElement.children[l].style.transform = 'translate3d(0px, 0px, 0)'
+                            }
+                        } else {
+                            for (let j = i; j < this.drag.firstIndex; j++) {
+                                const x = this.rectList[j + 1].left - this.rectList[j].left
+                                const y = this.rectList[j + 1].top - this.rectList[j].top
+                                this.containerElement.children[j].style.transform = 'translate3d(' + x + 'px, ' + y + 'px, 0)'
+                            }
+                            for (let k = this.drag.firstIndex + 1; k < this.rectList.length; k++) {
+                                this.containerElement.children[k].style.transform = 'translate3d(0px, 0px, 0)'
+                            }
+                            for (let l = 0; l < i; l++) {
+                                this.containerElement.children[l].style.transform = 'translate3d(0px, 0px, 0)'
+                            }
+                        }
+                        this.referenceElement = this.containerElement.children[i + 1]
+                        const x = this.rectList[i].left - this.rectList[this.drag.firstIndex].left
+                        const y = this.rectList[i].top - this.rectList[this.drag.firstIndex].top
+                        this.drag.element.style.transform = 'translate3d(' + x + 'px, ' + y + 'px, 0)'
+                        this.drag.index = i
+                        console.log(this.referenceElement)
+                        break
                     }
                 }
             }
 
             onPointerUp(e) {
+                if (!this.isPointerDown) return
                 this.isPointerDown = false
+
+                // 被拖拽元素从原位置插入referenceElement之前, 如果 referenceNode 为 null 则 newNode 将被插入到子节点的末尾*。*
+                if (this.referenceElement !== null) {
+                    console.log()
+                    this.containerElement.insertBefore(this.drag.element, this.referenceElement)
+                }
+                
+                this.drag.element.classList.remove('active')
+                this.clone.element.remove()
+
+                for (const item of this.containerElement.children) {
+                    item.style.transition = 'none'
+                    item.style.transform = 'translate3d(0px, 0px, 0px)'
+                }
             }
 
             init() {
@@ -164,7 +238,8 @@
                 console.log(this.rectList)
             }
         }
-        new Draggable({
+
+        let draggable = new Draggable({
             element: document.querySelector('.list')
         })
     </script>
