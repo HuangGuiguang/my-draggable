@@ -242,6 +242,10 @@
         let draggable = new Draggable({
             element: document.querySelector('.list')
         })
+
+        window.addEventListener('resize', () => {
+            draggable.getRectList()
+        })
     </script>
 </body>
 </html>
